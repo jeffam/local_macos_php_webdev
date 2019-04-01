@@ -1,275 +1,283 @@
-# Setting up a local development site
- 
-## Mac setup
- 
-One option for creating a local development environment on a Mac is to use
-VirtualBox and Vagrant to create a VM in which your site can run. However,
-keeping track of what's running inside the VM and what's running on the Mac
-can be tricky, as can mapping files and ports between the two.
- 
-Here are instructions for installing a Drupal 8 development site without using
-Vagrant or another VM system as of 4/6/2018.
- 
-### Install Homebrew
- 
-If you don't already have it installed, run this command (which is all on one
-line):
- 
+# macOS + php-fpm + apache
+
+These are the notes for my PHP (mainly Drupal) development setup on macOS. I've tried Vagrant and Docker, and I sure wish they were worth it, but filesystem performace issues are too noticeable.
+
+I prefer this native setup along with a robust development/staging server for catching any glitches from infrastructure differences.
+
+## Overview
+
+- PHP via [Homebrew][]
+- Apache 2.4.x (included with macOS)
+
+## PHP
+
+Install PHP 7.2 via Homebrew:
+
 ```
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+$ brew install php@7.2
 ```
- 
-Here are some useful Homebrew commands:
- 
+
+If you have an older version of PHP installed, run the following to ensure the `php` CLI version is 7.2, too.
+
 ```
-brew search STRING
+$ brew link --force --overwrite php@7.2
 ```
- 
-Look for Homebrew packages with names that contain the string. Package names
-that end with `@` and a number will install a specific version of the program.
- 
+
+The run `php -v` to see check the CLI version.
+
+### Configure PHP
+
+You may want to edit some settings in `/usr/local/etc/php/7.2/php.ini`. Here are my modifications:
+
 ```
-brew install PACKAGENAME
+max_execution_time = 90
+max_input_time = 90
+memory_limit = 1024M
 ```
- 
-Install the latest version of the package (or if `PACKAGENAM` includes `@`
-and a version number, that version).
- 
-```
-brew upgrade
-```
- 
-Upgrade all the programs that were installed via Homebrew to the latest
-versions.
- 
-Homebrew Services works with the macOS Launchctl Manager to run programs when
-the system is started, which you'll want PHP, Apache, and MariaDB to do.
- 
-```
-brew services list
-```
- 
-Display a list of running programs that were installed via Homebrew.
- 
-```
-brew services start PACKAGENAME
-brew services stop PACKAGENAME
-brew services restart PACKAGENAME
-```
- 
-Start, stop, or restart one of those programs.
- 
-### Make sure git is up to date
- 
-Use which git to see what version of git you are running. If it's old, use
-`brew install` git to update it. (As of this writing in April 2018, we are
-using git version 2.17.) It should be installed in `/usr/local/bin/git`.
- 
-### Install PHP 7.1 via Homebrew
- 
-In order to get PHP into the picture, install a new version of it with
-Homebrew:
- 
-```
-brew install php@7.1
-```
- 
-We are using PHP 7.1 currently, and this installs that version. The `php.ini`
-and `php-fpm.ini` file can be found in `/usr/local/etc/php/7.1/`.
- 
-Start this version of PHP:
- 
-```
-brew services start php@7.1
-```
- 
-Use php -v to check that that's the version of PHP you are running. You'll
-probably need to add these lines to your `~/.bash_profile` file:
- 
-```
-export PATH="/usr/local/opt/php@7.1/bin:$PATH"
-export PATH="/usr/local/opt/php@7.1/sbin:$PATH"
-```
- 
-Set the user that PHP will run as to be you; it means that Drupal will run as
-that user, too, and you'll have fewer permissions issues. Edit the
-`/usr/local/etc/php/7.1/php-fpm.d/www.conf` file and look for these lines:
- 
+
+Also consider running PHP as your user. This can reduce file permissions issues in Drupal and other PHP applications. Edit the `/usr/local/etc/php/7.2/php-fpm.d/www.conf` file and look for these lines:
+
 ```
 user = _www
 group = _www
 ```
- 
+
 Change `_www` to your username (which you can find out with `whoami`).
- 
-Also tell PHP to listen on port 9071, which is what we'll tell Apache to
-connect on. Find this line:
- 
+
+### Start PHP
+
 ```
-listen = 127.0.0.1:9000
+brew services start php@7.2
 ```
- 
-Change 9000 to 9071.
- 
-### Install Apache
- 
-Apache comes with MacOS, but use Homebrew to install another one.
- 
-Stop running the existing Apache:
- 
+
+### xdebug
+
 ```
-sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist 2>/dev/null
+$ pecl install xdebug
 ```
- 
-Install Apache via Homebrew instead:
- 
+
+Check the file `/usr/local/etc/php/7.2/php.ini` to see if the line `zend_extension="xdebug.so"` was added at the top of the file. Remove it if it's there.
+
+Add the following to `/usr/local/etc/php/7.2/conf.d/ext-xdebug.ini`. Note the port is `9009` here, while it is normally `9000`. Port `9000` conflicts with the default port of `php-fpm`, so it is changed here. When setting up debugging in your code editor, you'll need to use the port number set here.
+
 ```
-brew install httpd
+[xdebug]
+zend_extension="xdebug"
+
+xdebug.remote_enable = 1
+xdebug.remote_autostart = 1
+xdebug.remote_port=9009
 ```
- 
-See
-[macOS 10.13 High Sierra Apache Setup: Multiple PHP Versions](https://getgrav.org/blog/macos-sierra-apache-multiple-php-versions)
-for details of configuring Apache on a Mac.
- 
-To start the Apache daemon (`httpd`) now and restart in at login:
- 
+
+And restart PHP for the settings to take effect:
+
 ```
-brew services start httpd
+brew services restart php@7.2
 ```
- 
-Apache is listening on `http://localhost:8080`. See whether that URL displays
-an Apache message saying that it can't find a site. (Yet.)
- 
+
+Xdebug is great, but it's a performance drag. There's a handy script at https://github.com/w00fz/xdebug-osx that can be used to toggle xdebug on and off with the simple terminal commands:
+
+```
+$ xdebug-toggle off
+$ xdebug-toggle on
+```
+
+## Apache
+
+Apache comes with macOS. You can verify that and get the installed version with:
+
+```
+$ httpd -v
+Server version: Apache/2.4.34 (Unix)
+Server built:   Aug 17 2018 18:35:43
+```
+
+That's the result from macOS `10.14.3`.
+
+Many guides suggest installing Apache (or nginx) from Homebrew, but I've had no trouble with the version included in the OS.
+
 ### Configure Apache
- 
-Apache's configuration files are in `/usr/local/etc/httpd`. To avoid having
-your changes overwritten by updates to Apache, create a new directory called
-`other` in `/usr/local/etc/httpd` to contain your configuration files. (You can
-call it whatever you want; substitute the name you chose in the following
-instructions.
- 
-Then edit `/usr/local/etc/httpd/httpd.conf` (the main Apache configuration
-file) to include all files in the other directory. Add these lines at the end
-of the `httpd.conf` file:
- 
+
+Apache's configuration files are in `/etc/apache2`. To avoid having your changes overwritten by updates to Apache, create the new directory `/etc/apache2/other` to contain your custom configuration.
+
+Ensure that the following line is at the end of `/etc/apache2/httpd.conf` (the main Apache configuration file):
+
+```
+Include /private/etc/apache2/other/*.conf
+```
+
+Create a file in the `other` directory called `ANYFILENAME.conf` (e.g. `local.conf`). Add these lines to the file:
+
 ```
 # Local settings
-Include /usr/local/etc/httpd/other/*.conf
+
+# Overridden fron httpd.conf. Replace USERNAME with the output from `whoami`.
+User USERNAME
+
+# Overridden from httpd.conf to bind to only loopback address.
+Listen 127.0.0.1:80
+
+# Set a server name for logs
+ServerName localdev.test:80
+
+# Add Apache modules
+LoadModule actions_module libexec/apache2/mod_actions.so
+LoadModule vhost_alias_module libexec/apache2/mod_vhost_alias.so
+LoadModule rewrite_module libexec/apache2/mod_rewrite.so
+LoadModule proxy_module libexec/apache2/mod_proxy.so
+LoadModule proxy_fcgi_module libexec/apache2/mod_proxy_fcgi.so
+
+# The directory where all development sites live, with the pattern
+# ./hostname/web
+# where hostname is usually something like mysite.test.
+Define webdir /Users/USERNAME/Sites/
+
+<Directory ${webdir}>
+  Options +Indexes -Multiviews +FollowSymLinks
+  AllowOverride All
+  Require all granted
+</Directory>
+
+<VirtualHost *:80>
+  ServerAlias *
+  VirtualDocumentRoot ${webdir}%0/web
+
+  RewriteEngine On
+  Timeout 90
+
+  <FilesMatch "\.php$">
+    SetHandler proxy:fcgi://localhost:9000
+  </FilesMatch>
+</VirtualHost>
 ```
- 
-You may have to re-add these lines when Apache is updated.
- 
-Create a file in the `other` directory called whatever you want (maybe
-`local.conf`). Paste these lines into the file:
- 
-```
-  # Local settings
-  # Listen on the standard web port
-  Listen 80
- 
-  # Set a server name for logs
-  ServerName localmac.test:80
- 
-  # Add Apache modules modules
-  LoadModule vhost_alias_module lib/httpd/modules/mod_vhost_alias.so
-  LoadModule actions_module lib/httpd/modules/mod_actions.so
-  LoadModule proxy_module lib/httpd/modules/mod_proxy.so
-  LoadModule proxy_fcgi_module lib/httpd/modules/mod_proxy_fcgi.so
-  LoadModule rewrite_module lib/httpd/modules/mod_rewrite.so
- 
-  # The directory where all development sites live, with the pattern
-  # ./hostname/docroot
-  # where hostname is usually something like mysite.test.
-  Define webdir /Users/jeff/Sites/
- 
-  <Directory ${webdir}>
-    Options +Indexes -Multiviews +FollowSymLinks
-    AllowOverride All
-    Require all granted
-  </Directory>
- 
-  <VirtualHost *:80>
-    ServerAlias *
-    VirtualDocumentRoot ${webdir}%0/docroot
- 
-    <FilesMatch "\.php$">
-      Require all granted
-      SetHandler proxy:fcgi://127.0.0.1:9071
-    </FilesMatch>
-  </VirtualHost>
-```
- 
-Edit the line `Define webdir /Users/jeff/Sites/`, replacing
-`/Users/jeff/Sites/` with the directory where you want your websites to live.
-Don't forget the trailing slash.
- 
+
+Edit the line `Define webdir /Users/USERNAME/Sites/`, replacing `/Users/USERNAME/Sites/` with the directory where you want your websites to live. Don't forget the trailing slash.
+
 This tells Apache to:
- 
-- listen on port 80 instead of 8080
-- include some required Apache modules
-- set your “webdir” to the directory where your sites will live
-- look in all the subdirectories of that directory for a folder named docroot
-- from which to serve the sites
-- use the proxy:fcgi Apache module to get PHP into the mix, using the
-- aforementioned port 9071.
- 
-### Update your /etc/hosts file
- 
-In the directory you defined as “webdir”, you will be able to create as many
-directories as you want (or more likely, clone repositories of as many projects
-as you want). Be sure that each directory ends with `.test`.
- 
-Edit your /etc/hosts file and add this line:
- 
+
+- Include some required Apache modules
+- Configure [dynamic mass virtual hosts][] via the `VirtualDocumentRoot` directive.
+- Use the `proxy_fcgi_module` Apache module to enable PHP for all sites via the `php-fpm` service.
+
+### Start Apache
+
+To start the Apache daemon (`httpd`):
+
 ```
-  127.0.0.1 test.test
+$ sudo apachectl start
 ```
- 
-You can add additional directory names for your various projects, like this:
- 
+
+Other options for `apachectl` are `stop`, `restart`, and `configtest`, which can be useful for troubleshooting changes to you Apache configuration files.
+
+To start on system startup, you may need to do the following:
+
 ```
-  127.0.0.1 test.test foo.test
+sudo launchctl load /System/Library/LaunchDaemons/org.apache.httpd.plist
 ```
- 
-To test whether Apache is configured correctly, create a `test.test` directory
-in your webdir and put an `index.html` file and an `index.php file` in there.
- 
-- Recommended contents of the former: `<h1>CoLab rocks!</h1>`
-- Recommended contents of the latter: `<?php phpinfo(); `
- 
-Restart Apache and check whether it can see your `test.test/index.html` by
-pointing your browser at `http://test.test`. If that works, point it at
-`http://test.test/index.php` to see whether PHP is working with Apache.
- 
-### Install MariaDB
- 
-MariaDB is a replacement for mySQL; it works just the same but faster.
-Platform.sh and other web hosts are switching to it. To install and run it,
+
+## Test it out
+
+1. Create a directory at `/Users/USERNAME/Sites/example.test/web/`. Ensure that `/Users/USERNAME/Sites/` is actually the value of the `webdir` variable set above.
+2. Place a file in that directory called `index.php` with the contents `<?php phpinfo();`.
+3. Add the line `127.0.0.1	example.test` to your `/etc/hosts` file.
+4. Visit http://example.test in a browser.
+
+You should see the output of [phpinfo][].
+
+You can add as many sites as you want to your `webdir` (e.g. `/Users/USERNAME/Sites/`) and Apache will serve them without a restart.
+
+In other words, Apache will serve anything from `/Users/USERNAME/Sites/*.test/web/` at `http://*.test`, as long as you edit your `/etc/hosts` file to resolve `*.test` to `127.0.0.1`.
+
+## Bonus Stuff
+
+### MariaDB
+
+You'll probably need a MySQL-compatible database server, and MariaDB is a good choice. To install and enable it,
 run:
- 
+
 ```
 brew install mariadb
 brew services start mariadb
 ```
- 
-MariaDB is so much like mySQL that its command line interface is called
-`mysql`. By default it listens only to localhost, and its admin user is “root”
-with no password. Test the connection with this command:
- 
+
+MariaDB is so much like mySQL that its command line interface is called `mysql`. By default it listens only to localhost, and its admin user is "root" with no password. Test the connection with this command:
+
 ```
 mysql -u root
 ```
- 
-You should see a mySQL command prompt. Type `quit;` to quit. (Don't forget the
-semicolon.)
- 
-### Troubleshooting
- 
-If PHP runs out of memory, you can increase it in your
-`/usr/local/etc/php/7.1/php.ini` file. Find this line:
- 
+
+You should see a mySQL command prompt. Type `quit;` to quit.
+
+### Dnsmasq
+
+If you create many sites in your `webdir` and don't want to constantly modify `/etc/hosts`, you can install [dnsmasq][] and configure your system to resolve the `.test` top level domain to your localhost (127.0.0.1).
+
+You can install and enable it with Homebrew:
+
 ```
-  memory_limit = 128M
+$ brew install dnsmasq
+$ sudo brew services start dnsmasq
 ```
- 
-and change the number to 256M or more.
+
+Open `/usr/local/etc/dnsmasq.conf` and add the following line:
+
+```
+address=/.test/127.0.0.1
+```
+
+And restart dnsmasq:
+
+```
+$ sudo brew services restart dnsmasq
+```
+
+Test it with:
+
+```
+dig example.test @127.0.0.1
+```
+
+You should see something like the following:
+
+```
+;; ANSWER SECTION:
+example.test.		0	IN	A	127.0.0.1
+```
+
+Now that it's working, we need to add your local dnsmasq DNS server to the system resolver.
+
+Ensure that the `/etc/resolver/` directory exists:
+
+```
+sudo mkdir /etc/resolver
+```
+
+Add the file `/etc/resolver/test` with the following contents:
+
+```
+nameserver 127.0.0.1
+```
+
+You can test the new resolver via:
+
+```
+scutil --dns
+```
+
+You should see something like the following:
+
+```
+resolver #8
+  domain   : test
+  nameserver[0] : 127.0.0.1
+  flags    : Request A records, Request AAAA records
+  reach    : 0x00030002 (Reachable,Local Address,Directly Reachable Address)
+```
+
+At this point, `*.test` (e.g. `foo.test`, `whatever.test`, `myproject.test`) should resolve to `127.0.0.1` and you won't need to touch your `/etc/hosts` file whenever you add a new site to your `webdir`.
+
+
+[Homebrew]: https://brew.sh/
+[dynamic mass virtual hosts]: https://httpd.apache.org/docs/2.4/vhosts/mass.html
+[phpinfo]: https://www.php.net/manual/en/function.phpinfo.php
+[dnsmasq]: http://www.thekelleys.org.uk/dnsmasq/doc.html
