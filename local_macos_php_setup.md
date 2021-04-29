@@ -52,21 +52,22 @@ brew services start php@7.3
 
 ### xdebug
 
+These instructions enable step debugging only. Be sure to read the full [xdebug documentation][] for profiling, etc.
+
 ```
 $ pecl install xdebug
 ```
 
 Check the file `/usr/local/etc/php/7.3/php.ini` to see if the line `zend_extension="xdebug.so"` was added at the top of the file. Remove it if it's there.
 
-Add the following to `/usr/local/etc/php/7.3/conf.d/ext-xdebug.ini`. Note the port is `9009` here, while it is normally `9000`. Port `9000` conflicts with the default port of `php-fpm`, so it is changed here. When setting up debugging in your code editor, you'll need to use the port number set here.
+Add the following to `/usr/local/etc/php/7.3/conf.d/ext-xdebug.ini`.
 
 ```
 [xdebug]
-zend_extension="xdebug"
+zend_extension="xdebug.so"
 
-xdebug.remote_enable = 1
-xdebug.remote_autostart = 1
-xdebug.remote_port=9009
+xdebug.mode=debug
+xdebug.start_with_request=yes
 ```
 
 And restart PHP for the settings to take effect:
@@ -75,12 +76,35 @@ And restart PHP for the settings to take effect:
 brew services restart php@7.3
 ```
 
-Xdebug is great, but it's a performance drag. There's a handy script at https://github.com/w00fz/xdebug-osx that can be used to toggle xdebug on and off with the simple terminal commands:
+#### Xdebug Performance
+
+Xdebug causes a performance hit on PHP requests, both web and CLI.
+
+To reduce the hit, we can run two `php-fpm` pools - one with xdebug enabled and the other with xdebug disabled.
+
+Homebrew PHP includes a default `www` pool.
+
+- Copy `/usr/local/etc/php/7.3/php-fpm.d/www.conf` to `/usr/local/etc/php/7.3/php-fpm.d/www-xdebug.conf`.
+- Edit `www-xdebug.conf`.
+- Change `[www]` to `[www-xdebug]`.
+- Change the line `listen = 127.0.0.1:9000` to `listen = 127.0.0.1:9009`.
+- Edit `/usr/local/etc/php/7.3/php-fpm.d/www.conf` and add the following to a new line at the bottom of the file: `php_admin_value[xdebug.mode] = off`
+
+Restart PHP for the settings to take effect:
 
 ```
-$ xdebug-toggle off
-$ xdebug-toggle on
+brew services restart php@7.3
 ```
+
+After these changes, you'll have two `php-fpm` pools running on ports `9000` and `9009`. Only the `php-fpm` running on port `9009` will have Xdebug enabled.
+
+To disable Xdebug for command line scripts, set the following environment variable:
+
+```
+export XDEBUG_MODE=off
+```
+
+You can run that as needed, or add it permanently to your `.zshrc` or `.bash_profile` files.
 
 ## Apache
 
@@ -143,10 +167,18 @@ Define webdir /Users/USERNAME/Sites/
   VirtualDocumentRoot ${webdir}%0/web
 
   RewriteEngine On
+
+  # Set a default PHP_FPM_PORT.
+  RewriteRule ^ - [E=PHP_FPM_PORT:9000]
+
+  # If the XDEBUG_TRIGGER cookie is set, use an php-fpm pool with xdebug enabled.
+  RewriteCond %{HTTP_COOKIE} \XDEBUG_TRIGGER\b
+  RewriteRule ^ - [E=PHP_FPM_PORT:9009]
+
   Timeout 90
 
   <FilesMatch "\.php$">
-    SetHandler proxy:fcgi://localhost:9000
+    SetHandler proxy:fcgi://localhost:%{ENV:PHP_FPM_PORT}
   </FilesMatch>
 </VirtualHost>
 ```
@@ -158,6 +190,7 @@ This tells Apache to:
 - Include some required Apache modules
 - Configure [dynamic mass virtual hosts][] via the `VirtualDocumentRoot` directive.
 - Use the `proxy_fcgi_module` Apache module to enable PHP for all sites via the `php-fpm` service.
+- Send PHP requests to one of two `php-fpm` pools - one with xdebug disabled and one with it enabled. This is determined by the presence of the `XDEBUG_TRIGGER` cookie. See this [simple xdebug cookie webextension][] for a way to toggle that cookie for specific `.test` domains.
 
 ### Start Apache
 
@@ -278,6 +311,8 @@ At this point, `*.test` (e.g. `foo.test`, `whatever.test`, `myproject.test`) sho
 
 
 [Homebrew]: https://brew.sh/
+[xdebug documentation]: https://xdebug.org/docs
 [dynamic mass virtual hosts]: https://httpd.apache.org/docs/2.4/vhosts/mass.html
+[simple xdebug cookie webextension]: https://github.com/jeffam/xdebug_trigger_extension
 [phpinfo]: https://www.php.net/manual/en/function.phpinfo.php
 [dnsmasq]: http://www.thekelleys.org.uk/dnsmasq/doc.html
