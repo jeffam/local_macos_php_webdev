@@ -11,23 +11,23 @@ I prefer this native setup along with a robust development/staging server for ca
 
 ## PHP
 
-Install PHP 7.2 via Homebrew:
+Install PHP 7.3 via Homebrew:
 
 ```
-$ brew install php@7.2
+$ brew install php@7.3
 ```
 
-If you have an older version of PHP installed, run the following to ensure the `php` CLI version is 7.2, too.
+If you have an older version of PHP installed, run the following to ensure the `php` CLI version is 7.3, too.
 
 ```
-$ brew link --force --overwrite php@7.2
+$ brew link --force --overwrite php@7.3
 ```
 
 The run `php -v` to see check the CLI version.
 
 ### Configure PHP
 
-You may want to edit some settings in `/usr/local/etc/php/7.2/php.ini`. Here are my modifications:
+You may want to edit some settings in `/usr/local/etc/php/7.3/php.ini`. Here are my modifications:
 
 ```
 max_execution_time = 90
@@ -35,7 +35,7 @@ max_input_time = 90
 memory_limit = 1024M
 ```
 
-Also consider running PHP as your user. This can reduce file permissions issues in Drupal and other PHP applications. Edit the `/usr/local/etc/php/7.2/php-fpm.d/www.conf` file and look for these lines:
+Also consider running PHP as your user. This can reduce file permissions issues in Drupal and other PHP applications. Edit the `/usr/local/etc/php/7.3/php-fpm.d/www.conf` file and look for these lines:
 
 ```
 user = _www
@@ -47,7 +47,7 @@ Change `_www` to your username (which you can find out with `whoami`).
 ### Start PHP
 
 ```
-brew services start php@7.2
+brew services start php@7.3
 ```
 
 ### xdebug
@@ -56,9 +56,9 @@ brew services start php@7.2
 $ pecl install xdebug
 ```
 
-Check the file `/usr/local/etc/php/7.2/php.ini` to see if the line `zend_extension="xdebug.so"` was added at the top of the file. Remove it if it's there.
+Check the file `/usr/local/etc/php/7.3/php.ini` to see if the line `zend_extension="xdebug.so"` was added at the top of the file. Remove it if it's there.
 
-Add the following to `/usr/local/etc/php/7.2/conf.d/ext-xdebug.ini`. Note the port is `9009` here, while it is normally `9000`. Port `9000` conflicts with the default port of `php-fpm`, so it is changed here. When setting up debugging in your code editor, you'll need to use the port number set here.
+Add the following to `/usr/local/etc/php/7.3/conf.d/ext-xdebug.ini`. Note the port is `9009` here, while it is normally `9000`. Port `9000` conflicts with the default port of `php-fpm`, so it is changed here. When setting up debugging in your code editor, you'll need to use the port number set here.
 
 ```
 [xdebug]
@@ -72,7 +72,7 @@ xdebug.remote_port=9009
 And restart PHP for the settings to take effect:
 
 ```
-brew services restart php@7.2
+brew services restart php@7.3
 ```
 
 Xdebug is great, but it's a performance drag. There's a handy script at https://github.com/w00fz/xdebug-osx that can be used to toggle xdebug on and off with the simple terminal commands:
@@ -88,11 +88,11 @@ Apache comes with macOS. You can verify that and get the installed version with:
 
 ```
 $ httpd -v
-Server version: Apache/2.4.34 (Unix)
-Server built:   Aug 17 2018 18:35:43
+Server version: Apache/2.4.41 (Unix)
+Server built:   Jun  5 2020 23:42:06
 ```
 
-That's the result from macOS `10.14.3`.
+That's the result from macOS `10.15.7`.
 
 Many guides suggest installing Apache (or nginx) from Homebrew, but I've had no trouble with the version included in the OS.
 
