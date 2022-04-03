@@ -1,5 +1,7 @@
 # macOS + php-fpm + apache
 
+Note: This document is now deprecated for the variation configured in the main.yml ansible playbook. Everything is mostly the same, but Caddy is used instead of Apache.
+
 These are the notes for my PHP (mainly Drupal) development setup on macOS. I've tried Vagrant and Docker, and I sure wish they were worth it, but filesystem performace issues are too noticeable.
 
 I prefer this native setup along with a robust development/staging server for catching any glitches from infrastructure differences.

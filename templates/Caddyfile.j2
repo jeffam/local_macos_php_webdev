@@ -1,0 +1,36 @@
+# PHP-FPM is currently (2022/03) installed via homebrew.
+# php 7.4 is running on port 9070.
+# php 7.4 with xdebug enabled is running on port 9071.
+# php 8.1 is running on port 9080.
+# php 8.1 with xdebug enabled is running on port 9081.
+
+import /usr/local/etc/Caddy.conf.d/*.conf
+
+http://drupal.ilr.test {
+	@xdebug header_regexp Cookie XDEBUG_TRIGGER
+	root * /Users/{{ lookup('env', 'USER') }}/sites/{host}/web
+	encode gzip
+	php_fastcgi @xdebug 127.0.0.1:9081
+	php_fastcgi 127.0.0.1:9080
+	file_server
+	handle_errors {
+		respond "{http.error.status_code} {http.error.status_text}"
+	}
+}
+
+:80 {
+	@xdebug header_regexp Cookie XDEBUG_TRIGGER
+	root * /Users/{{ lookup('env', 'USER') }}/sites/{host}/web
+	encode gzip
+	php_fastcgi @xdebug 127.0.0.1:9071
+	php_fastcgi 127.0.0.1:9070
+	file_server
+	handle_errors {
+		respond "{http.error.status_code} {http.error.status_text}"
+	}
+}
+
+# This is the node.js proxy.
+http://www.ilr.test {
+	reverse_proxy http://localhost:9700
+}

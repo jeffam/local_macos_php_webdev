@@ -1,0 +1,123 @@
+---
+- hosts: all
+  vars:
+    homebrew_formulas:
+      - git
+      - php
+      - php@7.4
+      - caddy
+      - mariadb@10.4
+      - mailhog
+      - dnsmasq
+    php_versions:
+      - 7.4
+      - 8.1
+    pecl_exec_locations:
+      - /usr/local/opt/php@7.4/bin/pecl
+      - /usr/local/opt/php/bin/pecl
+
+  tasks:
+  - name: Ensure that required homebrew packages are installed (PHP, Caddy, MariaDB, etc.)
+    community.general.homebrew:
+      name: "{{ item }}"
+      state: latest
+    loop: "{{ homebrew_formulas }}"
+  - name: Ensure pecl apcu package is installed for all PHP versions
+    community.general.pear:
+      executable: "{{ item }}"
+      name: pecl/apcu
+      state: latest
+      prompts:
+        - (.*)Enable internal debugging in APCu \[no\]
+    loop: "{{ pecl_exec_locations }}"
+  - name: Ensure pecl xdebug package is installed for all PHP versions
+    community.general.pear:
+      executable: "{{ item }}"
+      name: pecl/xdebug
+      state: latest
+    loop: "{{ pecl_exec_locations }}"
+  - name: Remove php.ini changes from apcu pecl install
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      line: extension="apcu.so"
+      state: absent
+    loop: "{{ php_versions }}"
+  - name: Add or update PHP extension ini files
+    ansible.builtin.copy:
+      src: files/{{ item.src }}
+      dest: /usr/local/etc/{{ item.dest }}
+    loop:
+    - { src: ext-acpu.ini, dest: php/7.4/conf.d/ext-apcu.ini }
+    - { src: ext-acpu.ini, dest: php/8.1/conf.d/ext-apcu.ini }
+    - { src: ext-xdebug.7.4.ini, dest: php/7.4/conf.d/ext-xdebug.ini }
+    - { src: ext-xdebug.8.1.ini, dest: php/8.1/conf.d/ext-xdebug.ini }
+  - name: Remove php.ini changes from xdebug pecl install
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      line: zend_extension="xdebug.so"
+      state: absent
+    loop: "{{ php_versions }}"
+
+  - name: Configure PHP memory_limit
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      regexp: '^memory_limit ='
+      line: memory_limit = 1024M
+    loop: "{{ php_versions }}"
+  - name: Configure PHP max_execution_time
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      regexp: '^max_execution_time ='
+      line: max_execution_time = 90
+    loop: "{{ php_versions }}"
+  - name: Configure PHP max_input_time
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      regexp: '^max_input_time ='
+      line: max_input_time = 90
+    loop: "{{ php_versions }}"
+  - name: Configure PHP to use Mailhog
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      regexp: '^;?sendmail_path ='
+      line: sendmail_path = /usr/sbin/sendmail -S mail:1025
+    loop: "{{ php_versions }}"
+
+  - name: Add or update Caddy and PHP-FPM config files
+    ansible.builtin.template:
+      src: templates/{{ item.src }}
+      dest: /usr/local/etc/{{ item.dest }}
+    loop:
+    - { src: Caddyfile.j2, dest: Caddyfile }
+    - { src: php-fpm_7.4_www-xdebug.conf.j2, dest: php/7.4/php-fpm.d/www-xdebug.conf }
+    - { src: php-fpm_7.4_www.conf.j2, dest: php/7.4/php-fpm.d/www.conf }
+    - { src: php-fpm_8.1_www-xdebug.conf.j2, dest: php/8.1/php-fpm.d/www-xdebug.conf }
+    - { src: php-fpm_8.1_www.conf.j2, dest: php/8.1/php-fpm.d/www.conf }
+
+  - name: Ensure that the Caddy configuration import directory exists
+    ansible.builtin.file:
+      path: /usr/local/etc/Caddy.conf.d
+      state: directory
+      mode: '0755'
+  - name: Ensure that the ~/sites/ directory exists
+    ansible.builtin.file:
+      path: ~/sites
+      state: directory
+      mode: '0755'
+
+  - name: Add or update dnsmask configuration file
+    ansible.builtin.copy:
+      src: files/dnsmasq.conf
+      dest: /usr/local/etc/dnsmasq.conf
+  - name: Ensure that the /etc/resolver directory exists
+    ansible.builtin.file:
+      path: /etc/resolver
+      state: directory
+      mode: '0755'
+    become: yes
+  - name: Ensure that the /etc/resolver/test file exists
+    ansible.builtin.copy:
+      src: files/test-resolver
+      dest: /etc/resolver/test
+      mode: '0744'
+    become: yes
