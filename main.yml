@@ -105,7 +105,7 @@
       state: directory
       mode: '0755'
 
-  - name: Add or update dnsmask configuration file
+  - name: Add or update dnsmasq configuration file
     ansible.builtin.copy:
       src: files/dnsmasq.conf
       dest: /usr/local/etc/dnsmasq.conf
