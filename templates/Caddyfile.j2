@@ -6,18 +6,6 @@
 
 import /usr/local/etc/Caddy.conf.d/*.conf
 
-http://drupal.ilr.test {
-	@xdebug header_regexp Cookie XDEBUG_TRIGGER
-	root * /Users/{{ lookup('env', 'USER') }}/sites/{host}/web
-	encode gzip
-	php_fastcgi @xdebug 127.0.0.1:9081
-	php_fastcgi 127.0.0.1:9080
-	file_server
-	handle_errors {
-		respond "{http.error.status_code} {http.error.status_text}"
-	}
-}
-
 :80 {
 	@xdebug header_regexp Cookie XDEBUG_TRIGGER
 	root * /Users/{{ lookup('env', 'USER') }}/sites/{host}/web
