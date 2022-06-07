@@ -27,7 +27,7 @@ Currently, it runs PHP and other services directly on macOS. This is done for si
 Run the following to install both the above software and related configuration files:
 
 ```
-$ ansible-playbook main.yml -i inventory
+$ ansible-playbook main.yml
 ```
 
 You can run the playbook multiple times, if new versions of the required software are available, they will be automatically updated. 
