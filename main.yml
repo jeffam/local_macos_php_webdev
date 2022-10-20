@@ -82,6 +82,13 @@
       regexp: '^;?sendmail_path ='
       line: sendmail_path = /usr/sbin/sendmail -S mail:1025
     loop: "{{ php_versions }}"
+  - name: Configure PHP upload_max_filesize
+    ansible.builtin.lineinfile:
+      path: /usr/local/etc/php/{{ item }}/php.ini
+      regexp: '^upload_max_filesize ='
+      line: upload_max_filesize = 8M
+    loop: "{{ php_versions }}"
+
 
   - name: Add or update Caddy and PHP-FPM config files
     ansible.builtin.template:
