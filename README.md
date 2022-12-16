@@ -55,6 +55,54 @@ $ brew services start mailhog
 $ sudo brew services start dnsmasq
 ```
 
+# Configuring sites
+
+By default, Caddy is will use PHP 8.1 and look for sites in:
+
+```
+/Users/$USER/sites/{host}/web/
+```
+
+For example, a file in the following location:
+
+```
+/Users/jeff/sites/demo.test/web/info.php
+```
+
+...would be viewed in a browser at http://demo.test/info.php
+
+For this to work, `dnsmasq` should be running and configured to resolve all `.test` domains to `127.0.0.1`. Alternatively, hostnames could be added to `/etc/hosts` if `dnsmasq` is not used.
+
+## Using different PHP versions or otherwise modifying Caddy config
+
+Additional configuration can be added to `/usr/local/etc/Caddy.conf.d/`. Any files ending in `.conf` will be loaded into config.
+
+### Example: Run a site in PHP 8.2
+
+```
+http://php-8.2.test {
+	@xdebug header_regexp Cookie XDEBUG_TRIGGER
+	root * /Users/jeff/sites/{host}/web
+	encode gzip
+	php_fastcgi @xdebug 127.0.0.1:9821
+	php_fastcgi 127.0.0.1:9820
+	file_server
+	handle_errors {
+		respond "{http.error.status_code} {http.error.status_text}"
+	}
+}
+```
+
+Note the `php_*` lines and the selected port numbers.
+
+## Using xdebug
+
+This configuration sets up two `php-fpm` pools for each version of PHP: One with `xdebug` enable and the other without. This is done because `xdebug` can degrade PHP performance.
+
+Caddy is configured to switch to the`php-fpm` pool with `xdebug` enabled when the `XDEBUG_TRIGGER` cookie is present.
+
+You can use your browser dev tools to set the cookie (a value of `1` is fine). Or you can install a browser extension to toggle the cookie, if you are comfortable with the requested permissions. Search for 'xdebug browser extension'.
+
 # Roadmap
 
 - Install and manage `launchd` services automatically.
