@@ -19,8 +19,3 @@ import /usr/local/etc/Caddy.conf.d/*.conf
 		respond "{http.error.status_code} {http.error.status_text}"
 	}
 }
-
-# This is the node.js proxy.
-http://www.ilr.test {
-	reverse_proxy http://localhost:9700
-}
