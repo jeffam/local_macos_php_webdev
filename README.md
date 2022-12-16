@@ -14,10 +14,13 @@ Currently, it runs PHP and other services directly on macOS. This is done for si
 
 - Caddy 2.x web server
 - PHP-FPM with 4 pools
-  - PHP 7.x with xdebug enabled (port 9070)
-  - PHP 7.x with xdebug disabled (port 9071)
-  - PHP 8.x with xdebug enabled (port 9080)
-  - PHP 8.x with xdebug disabled (port 9081)
+  - PHP 7.4 with xdebug enabled (port 9740)
+  - PHP 7.4 with xdebug disabled (port 9741)
+  - PHP 8.1 with xdebug enabled (port 9810)
+  - PHP 8.1 with xdebug disabled (port 9081)
+  - PHP 8.2 with xdebug enabled (port 9820)
+  - PHP 8.2 with xdebug disabled (port 9821)
+- pecl/apcu
 - MariaDB, a MySQL-compatible database server
 - Dnsmasq for automatic `.test` TLD that resolves to localhost
 - Mailhog for local email debugging and testing
@@ -44,6 +47,7 @@ This is left as a manual task at present, so that the configured software can be
 
 ```
 $ brew services start php
+$ brew services start php@8.1
 $ brew services start php@7.4
 $ brew services start caddy
 $ brew services start mariadb@10.4
