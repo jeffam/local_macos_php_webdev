@@ -98,7 +98,7 @@
     ansible.builtin.lineinfile:
       path: /usr/local/etc/php/{{ item }}/php.ini
       regexp: '^;?sendmail_path ='
-      line: sendmail_path = /usr/sbin/sendmail -S mail:1025
+      line: sendmail_path = /usr/local/bin/MailHog sendmail
     loop: "{{ php_versions }}"
   - name: Configure PHP upload_max_filesize
     ansible.builtin.lineinfile:
