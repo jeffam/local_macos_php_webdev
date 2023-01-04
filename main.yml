@@ -26,6 +26,10 @@
       name: "{{ item }}"
       state: latest
     loop: "{{ homebrew_formulas }}"
+  - name: Unlink php 8.2
+    community.general.homebrew:
+      name: php
+      state: unlinked
   - name: Link php 8.1 for CLI use
     community.general.homebrew:
       name: php@8.1
