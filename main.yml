@@ -21,20 +21,35 @@
       - /usr/local/opt/php/bin/pecl
 
   tasks:
+  - name: Create directory for ansible custom facts
+    ansible.builtin.file:
+      state: directory
+      recurse: true
+      path: /usr/local/etc/ansible/facts.d
+  - name: Install custom PHP version fact
+    ansible.builtin.copy:
+      src: files/php_version.fact
+      dest: /usr/local/etc/ansible/facts.d
+      mode: preserve
   - name: Ensure that required homebrew packages are installed (PHP, Caddy, MariaDB, etc.)
     community.general.homebrew:
       name: "{{ item }}"
       state: latest
     loop: "{{ homebrew_formulas }}"
+  - name: Re-read facts after adding custom fact and installing/updating PHP
+    ansible.builtin.setup:
+      filter: ansible_local
+      fact_path: /usr/local/etc/ansible/facts.d
   - name: Unlink php 8.2
     community.general.homebrew:
       name: php
       state: unlinked
+    when: ansible_local['php_version'] != "8.1"
   - name: Link php 8.1 for CLI use
     community.general.homebrew:
       name: php@8.1
       state: linked
-
+    when: ansible_local['php_version'] != "8.1"
   - name: Ensure pecl apcu package is installed for all PHP versions
     community.general.pear:
       executable: "{{ item }}"
