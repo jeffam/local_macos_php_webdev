@@ -5,6 +5,7 @@
       - git
       - php@7.4
       - php@8.1
+      - php@8.2
       - php
       - caddy
       - composer
@@ -15,10 +16,12 @@
       - 7.4
       - 8.1
       - 8.2
+      - 8.3
     pecl_exec_locations:
       - /usr/local/opt/php@7.4/bin/pecl
       - /usr/local/opt/php@8.1/bin/pecl
-      - /usr/local/opt/php/bin/pecl
+      - /usr/local/opt/php@8.2/bin/pecl
+      - /usr/local/opt/php@8.3/bin/pecl
 
   tasks:
   - name: Create directory for ansible custom facts
@@ -71,7 +74,8 @@
       state: latest
     loop:
       - /usr/local/opt/php@8.1/bin/pecl
-      - /usr/local/opt/php/bin/pecl
+      - /usr/local/opt/php@8.2/bin/pecl
+      - /usr/local/opt/php@8.3/bin/pecl
   - name: Remove php.ini changes from apcu pecl install
     ansible.builtin.lineinfile:
       path: /usr/local/etc/php/{{ item }}/php.ini
@@ -86,9 +90,11 @@
     - { src: ext-acpu.ini, dest: php/7.4/conf.d/ext-apcu.ini }
     - { src: ext-acpu.ini, dest: php/8.1/conf.d/ext-apcu.ini }
     - { src: ext-acpu.ini, dest: php/8.2/conf.d/ext-apcu.ini }
+    - { src: ext-acpu.ini, dest: php/8.3/conf.d/ext-apcu.ini }
     - { src: ext-xdebug.7.4.ini, dest: php/7.4/conf.d/ext-xdebug.ini }
     - { src: ext-xdebug.8.1.ini, dest: php/8.1/conf.d/ext-xdebug.ini }
     - { src: ext-xdebug.8.2.ini, dest: php/8.2/conf.d/ext-xdebug.ini }
+    - { src: ext-xdebug.8.3.ini, dest: php/8.3/conf.d/ext-xdebug.ini }
   - name: Remove php.ini changes from xdebug pecl install
     ansible.builtin.lineinfile:
       path: /usr/local/etc/php/{{ item }}/php.ini
@@ -140,6 +146,8 @@
     - { src: php-fpm_8.1_www.conf.j2, dest: php/8.1/php-fpm.d/www.conf }
     - { src: php-fpm_8.2_www-xdebug.conf.j2, dest: php/8.2/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.2_www.conf.j2, dest: php/8.2/php-fpm.d/www.conf }
+    - { src: php-fpm_8.3_www-xdebug.conf.j2, dest: php/8.3/php-fpm.d/www-xdebug.conf }
+    - { src: php-fpm_8.3_www.conf.j2, dest: php/8.3/php-fpm.d/www.conf }
 
   - name: Ensure that the Caddy configuration import directory exists
     ansible.builtin.file:

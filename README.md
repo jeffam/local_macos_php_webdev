@@ -47,6 +47,7 @@ This is left as a manual task at present, so that the configured software can be
 
 ```
 $ brew services start php
+$ brew services start php@8.2
 $ brew services start php@8.1
 $ brew services start php@7.4
 $ brew services start caddy
@@ -57,7 +58,7 @@ $ sudo brew services start dnsmasq
 
 # Configuring sites
 
-By default, Caddy is will use PHP 8.1 and look for sites in:
+By default, Caddy will use PHP 8.1 and look for sites in:
 
 ```
 /Users/$USER/sites/{host}/web/
