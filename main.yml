@@ -9,7 +9,7 @@
       - php
       - caddy
       - composer
-      - mariadb@10.4
+      - mariadb@10.11
       - mailhog
       - dnsmasq
     php_versions:
