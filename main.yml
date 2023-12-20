@@ -34,6 +34,10 @@
       src: files/php_version.fact
       dest: /usr/local/etc/ansible/facts.d
       mode: preserve
+  - name: Tap shivammathur/php for php@7.4
+    community.general.homebrew_tap:
+      name: shivammathur/php
+      state: present
   - name: Ensure that required homebrew packages are installed (PHP, Caddy, MariaDB, etc.)
     community.general.homebrew:
       name: "{{ item }}"
