@@ -47,16 +47,20 @@
     ansible.builtin.setup:
       filter: ansible_local
       fact_path: /usr/local/etc/ansible/facts.d
-  - name: Unlink php 8.2
+  - name: Unlink all but php 8.2
     community.general.homebrew:
-      name: php
+      name: "{ item }"
       state: unlinked
-    when: ansible_local['php_version'] != "8.1"
-  - name: Link php 8.1 for CLI use
+    when: ansible_local['php_version'] != "8.2"
+    loop:
+      - php@7.4
+      - php@8.1
+      - php
+  - name: Link php 8.2 for CLI use
     community.general.homebrew:
-      name: php@8.1
+      name: php@8.2
       state: linked
-    when: ansible_local['php_version'] != "8.1"
+    when: ansible_local['php_version'] != "8.2"
   - name: Ensure pecl apcu package is installed for all PHP versions
     community.general.pear:
       executable: "{{ item }}"
