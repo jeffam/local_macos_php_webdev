@@ -78,7 +78,7 @@ For this to work, `dnsmasq` should be running and configured to resolve all `.te
 
 ## Using different PHP versions or otherwise modifying Caddy config
 
-Additional configuration can be added to `/usr/local/etc/Caddy.conf.d/`. Any files ending in `.conf` will be loaded into config.
+Additional configuration can be added to `/opt/homebrew/etc/Caddy.conf.d/`. Any files ending in `.conf` will be loaded into config.
 
 ### Example: Run a site in PHP 8.3
 

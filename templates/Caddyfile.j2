@@ -8,7 +8,7 @@
 # php 8.3 is running on port 9830.
 # php 8.3 with xdebug enabled is running on port 9831.
 
-import /usr/local/etc/Caddy.conf.d/*.conf
+import /opt/homebrew/etc/Caddy.conf.d/*.conf
 
 :80 {
 	@xdebug header_regexp Cookie XDEBUG_TRIGGER
