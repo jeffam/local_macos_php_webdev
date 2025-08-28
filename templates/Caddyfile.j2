@@ -1,12 +1,10 @@
-# PHP-FPM is currently (2022/03) installed via homebrew.
-# php 7.4 is running on port 9740.
-# php 7.4 with xdebug enabled is running on port 9741.
-# php 8.1 is running on port 9810.
-# php 8.1 with xdebug enabled is running on port 9811.
+# PHP-FPM is currently (2025-08) installed via homebrew. 8.3.x is the default.
 # php 8.2 is running on port 9820.
 # php 8.2 with xdebug enabled is running on port 9821.
 # php 8.3 is running on port 9830.
 # php 8.3 with xdebug enabled is running on port 9831.
+# php 8.4 is running on port 9840.
+# php 8.4 with xdebug enabled is running on port 9841.
 
 import /opt/homebrew/etc/Caddy.conf.d/*.conf
 
@@ -14,8 +12,8 @@ import /opt/homebrew/etc/Caddy.conf.d/*.conf
 	@xdebug header_regexp Cookie XDEBUG_TRIGGER
 	root * /Users/{{ lookup('env', 'USER') }}/sites/{host}/web
 	encode gzip
-	php_fastcgi @xdebug 127.0.0.1:9821
-	php_fastcgi 127.0.0.1:9820
+	php_fastcgi @xdebug 127.0.0.1:9831
+	php_fastcgi 127.0.0.1:9830
 	file_server
 	handle_errors {
 		respond "{http.error.status_code} {http.error.status_text}"

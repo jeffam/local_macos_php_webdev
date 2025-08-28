@@ -13,15 +13,13 @@ Currently, it runs PHP and other services directly on macOS. This is done for si
 ## What is installed and configured
 
 - Caddy 2.x web server
-- PHP-FPM with 8 pools
-  - PHP 7.4 with xdebug enabled (port 9740)
-  - PHP 7.4 with xdebug disabled (port 9741)
-  - PHP 8.1 with xdebug enabled (port 9810)
-  - PHP 8.1 with xdebug disabled (port 9081)
+- PHP-FPM with 6 pools
   - PHP 8.2 with xdebug enabled (port 9820)
   - PHP 8.2 with xdebug disabled (port 9821)
   - PHP 8.3 with xdebug enabled (port 9830)
   - PHP 8.3 with xdebug disabled (port 9831)
+  - PHP 8.4 with xdebug enabled (port 9840)
+  - PHP 8.4 with xdebug disabled (port 9841)
 - pecl/apcu
 - MariaDB, a MySQL-compatibledatabase server
 - Dnsmasq for automatic `.test` TLD that resolves to localhost
@@ -48,19 +46,24 @@ $ ansible-galaxy install -r requirements.yml
 This is left as a manual task at present, so that the configured software can be enabled or disabled as desired.
 
 ```
-$ brew services start php
+$ brew services start php # php 8.4
+$ brew services start php@8.3
 $ brew services start php@8.2
-$ brew services start php@8.1
-$ brew services start php@7.4
 $ brew services start caddy
 $ brew services start mariadb@10.11
 $ brew services start mailhog
 $ sudo brew services start dnsmasq
 ```
 
+Caddy can also be started manually to take advantage of the `--watch` parameter:
+
+```
+$ caddy run --config /opt/homebrew/etc/Caddyfile --watch
+```
+
 # Configuring sites
 
-By default, Caddy will use PHP 8.2 and look for sites in:
+By default, Caddy will use PHP 8.3 and look for sites in:
 
 ```
 /Users/$USER/sites/{host}/web/
@@ -80,15 +83,15 @@ For this to work, `dnsmasq` should be running and configured to resolve all `.te
 
 Additional configuration can be added to `/opt/homebrew/etc/Caddy.conf.d/`. Any files ending in `.conf` will be loaded into config.
 
-### Example: Run a site in PHP 8.3
+### Example: Run a site in PHP 8.4
 
 ```
-http://php-8.3.test {
+http://example.test {
 	@xdebug header_regexp Cookie XDEBUG_TRIGGER
 	root * /Users/jeff/sites/{host}/web
 	encode gzip
-	php_fastcgi @xdebug 127.0.0.1:9831
-	php_fastcgi 127.0.0.1:9830
+	php_fastcgi @xdebug 127.0.0.1:9841
+	php_fastcgi 127.0.0.1:9840
 	file_server
 	handle_errors {
 		respond "{http.error.status_code} {http.error.status_text}"

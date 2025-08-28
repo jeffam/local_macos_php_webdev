@@ -3,9 +3,8 @@
   vars:
     homebrew_formulas:
       - git
-      - php@7.4
-      - php@8.1
       - php@8.2
+      - php@8.3
       - php
       - caddy
       - composer
@@ -13,15 +12,13 @@
       - mailhog
       - dnsmasq
     php_versions:
-      - 7.4
-      - 8.1
       - 8.2
       - 8.3
+      - 8.4
     pecl_exec_locations:
-      - /usr/local/opt/php@7.4/bin/pecl
-      - /usr/local/opt/php@8.1/bin/pecl
       - /opt/homebrew/opt/php@8.2/bin/pecl
       - /opt/homebrew/opt/php@8.3/bin/pecl
+      - /opt/homebrew/opt/php@8.4/bin/pecl
 
   tasks:
   - name: Create directory for ansible custom facts
@@ -34,10 +31,6 @@
       src: files/php_version.fact
       dest: /tmp/local_macos_php_webdev/ansible/facts.d
       mode: preserve
-  - name: Tap shivammathur/php for php@7.4
-    community.general.homebrew_tap:
-      name: shivammathur/php
-      state: present
   - name: Ensure that required homebrew packages are installed (PHP, Caddy, MariaDB, etc.)
     community.general.homebrew:
       name: "{{ item }}"
@@ -46,21 +39,20 @@
   - name: Re-read facts after adding custom fact and installing/updating PHP
     ansible.builtin.setup:
       filter: ansible_local
-  - name: Unlink all but php 8.2
       fact_path: /tmp/local_macos_php_webdev/ansible/facts.d
+  - name: Unlink all but php 8.3
     community.general.homebrew:
-      name: "{ item }"
+      name: "{{ item }}"
       state: unlinked
-    when: ansible_local['php_version'] != "8.2"
+    when: ansible_local['php_version'] != "8.3"
     loop:
-      - php@7.4
-      - php@8.1
+      - php@8.2
       - php
-  - name: Link php 8.2 for CLI use
+  - name: Link php 8.3 for CLI use
     community.general.homebrew:
-      name: php@8.2
+      name: php@8.3
       state: linked
-    when: ansible_local['php_version'] != "8.2"
+    when: ansible_local['php_version'] != "8.3"
   - name: Symlink pcre2.h files for apcu installation
     ansible.builtin.file:
       src: /opt/homebrew/opt/pcre2/include/pcre2.h
@@ -75,13 +67,7 @@
       prompts:
         - (.*)Enable internal debugging in APCu \[no\]
     loop: "{{ pecl_exec_locations }}"
-  # Note that as of 3.2.0, xdebug no longer supports PHP 7.x. So we don't try to install the latest.
-  - name: Ensure pecl xdebug package is installed for PHP 7.4
-    community.general.pear:
-      executable: /usr/local/opt/php@7.4/bin/pecl
-      name: pecl/xdebug
-      state: present
-  - name: Ensure pecl xdebug package is installed for all PHP 8.x versions
+  - name: Ensure pecl xdebug package is installed for all PHP versions
     community.general.pear:
       executable: "{{ item }}"
       name: pecl/xdebug
@@ -104,14 +90,12 @@
       src: files/{{ item.src }}
       dest: /opt/homebrew/etc/{{ item.dest }}
     loop:
-    - { src: ext-acpu.ini, dest: php/7.4/conf.d/ext-apcu.ini }
-    - { src: ext-acpu.ini, dest: php/8.1/conf.d/ext-apcu.ini }
     - { src: ext-acpu.ini, dest: php/8.2/conf.d/ext-apcu.ini }
     - { src: ext-acpu.ini, dest: php/8.3/conf.d/ext-apcu.ini }
-    - { src: ext-xdebug.7.4.ini, dest: php/7.4/conf.d/ext-xdebug.ini }
-    - { src: ext-xdebug.8.1.ini, dest: php/8.1/conf.d/ext-xdebug.ini }
+    - { src: ext-acpu.ini, dest: php/8.4/conf.d/ext-apcu.ini }
     - { src: ext-xdebug.8.2.ini, dest: php/8.2/conf.d/ext-xdebug.ini }
     - { src: ext-xdebug.8.3.ini, dest: php/8.3/conf.d/ext-xdebug.ini }
+    - { src: ext-xdebug.8.4.ini, dest: php/8.4/conf.d/ext-xdebug.ini }
 
   - name: Configure PHP memory_limit
     ansible.builtin.lineinfile:
@@ -149,14 +133,12 @@
       dest: /opt/homebrew/etc/{{ item.dest }}
     loop:
     - { src: Caddyfile.j2, dest: Caddyfile }
-    - { src: php-fpm_7.4_www-xdebug.conf.j2, dest: php/7.4/php-fpm.d/www-xdebug.conf }
-    - { src: php-fpm_7.4_www.conf.j2, dest: php/7.4/php-fpm.d/www.conf }
-    - { src: php-fpm_8.1_www-xdebug.conf.j2, dest: php/8.1/php-fpm.d/www-xdebug.conf }
-    - { src: php-fpm_8.1_www.conf.j2, dest: php/8.1/php-fpm.d/www.conf }
     - { src: php-fpm_8.2_www-xdebug.conf.j2, dest: php/8.2/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.2_www.conf.j2, dest: php/8.2/php-fpm.d/www.conf }
     - { src: php-fpm_8.3_www-xdebug.conf.j2, dest: php/8.3/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.3_www.conf.j2, dest: php/8.3/php-fpm.d/www.conf }
+    - { src: php-fpm_8.4_www-xdebug.conf.j2, dest: php/8.4/php-fpm.d/www-xdebug.conf }
+    - { src: php-fpm_8.4_www.conf.j2, dest: php/8.4/php-fpm.d/www.conf }
 
   - name: Ensure that the Caddy configuration import directory exists
     ansible.builtin.file:
