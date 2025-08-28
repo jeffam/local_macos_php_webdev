@@ -105,7 +105,7 @@ Note the `php_*` lines and the selected port numbers.
 
 ## Using xdebug
 
-This configuration sets up two `php-fpm` pools for each version of PHP: One with `xdebug` enable and the other without. This is done because `xdebug` can degrade PHP performance.
+This configuration sets up two `php-fpm` pools for each version of PHP: One with `xdebug` enabled and the other without. This is done because `xdebug` can degrade PHP performance.
 
 Caddy is configured to switch to the`php-fpm` pool with `xdebug` enabled when the `XDEBUG_TRIGGER` cookie is present.
 
