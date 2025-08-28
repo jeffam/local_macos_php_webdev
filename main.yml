@@ -162,9 +162,11 @@
       state: directory
       mode: '0755'
     become: yes
+    when: ansible_become | default(false) | bool
   - name: Ensure that the /etc/resolver/test file exists
     ansible.builtin.copy:
       src: files/test-resolver
       dest: /etc/resolver/test
       mode: '0744'
     become: yes
+    when: ansible_become | default(false) | bool
