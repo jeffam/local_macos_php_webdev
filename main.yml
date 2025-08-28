@@ -127,12 +127,18 @@
       regexp: '^upload_max_filesize ='
       line: upload_max_filesize = 8M
     loop: "{{ php_versions }}"
+  - name: Ensure that the Caddy configuration import directory exists
+    ansible.builtin.file:
+      path: /opt/homebrew/etc/Caddy.conf.d
+      state: directory
+      mode: '0755'
   - name: Add or update Caddy and PHP-FPM config files
     ansible.builtin.template:
       src: templates/{{ item.src }}
       dest: /opt/homebrew/etc/{{ item.dest }}
     loop:
     - { src: Caddyfile.j2, dest: Caddyfile }
+    - { src: example.test.conf.j2, dest: Caddy.conf.d/example.test.conf }
     - { src: php-fpm_8.2_www-xdebug.conf.j2, dest: php/8.2/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.2_www.conf.j2, dest: php/8.2/php-fpm.d/www.conf }
     - { src: php-fpm_8.3_www-xdebug.conf.j2, dest: php/8.3/php-fpm.d/www-xdebug.conf }
@@ -140,11 +146,6 @@
     - { src: php-fpm_8.4_www-xdebug.conf.j2, dest: php/8.4/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.4_www.conf.j2, dest: php/8.4/php-fpm.d/www.conf }
 
-  - name: Ensure that the Caddy configuration import directory exists
-    ansible.builtin.file:
-      path: /usr/local/etc/Caddy.conf.d
-      state: directory
-      mode: '0755'
   - name: Ensure that the ~/sites/ directory exists
     ansible.builtin.file:
       path: ~/sites

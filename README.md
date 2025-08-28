@@ -72,10 +72,10 @@ By default, Caddy will use PHP 8.3 and look for sites in:
 For example, a file in the following location:
 
 ```
-/Users/jeff/sites/demo.test/web/info.php
+/Users/jeff/sites/example.test/web/info.php
 ```
 
-...would be viewed in a browser at http://demo.test/info.php
+...would be viewed in a browser at http://example.test/info.php
 
 For this to work, `dnsmasq` should be running and configured to resolve all `.test` domains to `127.0.0.1`. Alternatively, hostnames could be added to `/etc/hosts` if `dnsmasq` is not used.
 
@@ -84,6 +84,8 @@ For this to work, `dnsmasq` should be running and configured to resolve all `.te
 Additional configuration can be added to `/opt/homebrew/etc/Caddy.conf.d/`. Any files ending in `.conf` will be loaded into config.
 
 ### Example: Run a site in PHP 8.4
+
+The file `/opt/homebrew/etc/Caddy.conf.d/example.test.conf` would contain the following:
 
 ```
 http://example.test {

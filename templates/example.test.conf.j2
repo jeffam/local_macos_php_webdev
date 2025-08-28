@@ -1,0 +1,12 @@
+# Example Caddy custom configuration. This file is managed by Ansible.
+http://example.test:80 {
+	@xdebug header_regexp Cookie XDEBUG_TRIGGER
+	root * /Users/{{ lookup('env', 'USER') }}/sites/{host}/web
+	encode gzip
+	php_fastcgi @xdebug 127.0.0.1:9841
+	php_fastcgi 127.0.0.1:9840
+	file_server
+	handle_errors {
+		respond "{http.error.status_code} {http.error.status_text}"
+	}
+}
