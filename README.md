@@ -23,7 +23,7 @@ Currently, it runs PHP and other services directly on macOS. This is done for si
 - pecl/apcu
 - MariaDB, a MySQL-compatibledatabase server
 - Dnsmasq for automatic `.test` TLD that resolves to localhost
-- Mailhog for local email debugging and testing
+- Mailpit for local email debugging and testing
 
 ## Running the Ansible playbook
 
@@ -51,7 +51,7 @@ $ brew services start php@8.3
 $ brew services start php@8.2
 $ brew services start caddy
 $ brew services start mariadb@10.11
-$ brew services start mailhog
+$ brew services start mailpit
 $ sudo brew services start dnsmasq
 ```
 

@@ -9,7 +9,7 @@
       - caddy
       - composer
       - mariadb@10.11
-      - mailhog
+      - mailpit
       - dnsmasq
     php_versions:
       - 8.2
@@ -115,11 +115,11 @@
       regexp: '^max_input_time ='
       line: max_input_time = 90
     loop: "{{ php_versions }}"
-  - name: Configure PHP to use Mailhog
+  - name: Configure PHP to use Mailpit
     ansible.builtin.lineinfile:
       path: /opt/homebrew/etc/php/{{ item }}/php.ini
       regexp: '^;?sendmail_path ='
-      line: sendmail_path = /opt/homebrew/bin/MailHog sendmail
+      line: sendmail_path = /opt/homebrew/bin/mailpit sendmail
     loop: "{{ php_versions }}"
   - name: Configure PHP upload_max_filesize
     ansible.builtin.lineinfile:
