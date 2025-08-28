@@ -115,3 +115,16 @@ You can use your browser dev tools to set the cookie (a value of `1` is fine). O
 
 - Install and manage `launchd` services automatically.
 - Add a similar container-based setup for Docker or Podman. Caddy and dnsmasq could still run on the macOS host.
+
+
+# Notes
+
+## Connecting to the database
+
+There are lots of ways to connect to the mariadb database out of the box. For a setup that requires TCP connections (vs. socket), creating a new super user can be helpful:
+
+```
+CREATE USER 'jeff'@'127.0.0.1';
+GRANT SUPER, CREATE ON *.* TO 'jeff'@'127.0.0.1';
+FLUSH PRIVILEGES;
+```
