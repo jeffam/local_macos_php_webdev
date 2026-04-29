@@ -3,8 +3,8 @@
   vars:
     homebrew_formulas:
       - git
-      - php@8.2
       - php@8.3
+      - php@8.4
       - php
       - caddy
       - composer
@@ -12,13 +12,13 @@
       - mailpit
       - dnsmasq
     php_versions:
-      - 8.2
       - 8.3
       - 8.4
+      - 8.5
     pecl_exec_locations:
-      - /opt/homebrew/opt/php@8.2/bin/pecl
       - /opt/homebrew/opt/php@8.3/bin/pecl
       - /opt/homebrew/opt/php@8.4/bin/pecl
+      - /opt/homebrew/opt/php@8.5/bin/pecl
 
   tasks:
   - name: Create directory for ansible custom facts
@@ -36,23 +36,25 @@
       name: "{{ item }}"
       state: latest
     loop: "{{ homebrew_formulas }}"
+    tags:
+      - install
   - name: Re-read facts after adding custom fact and installing/updating PHP
     ansible.builtin.setup:
       filter: ansible_local
       fact_path: /tmp/local_macos_php_webdev/ansible/facts.d
-  - name: Unlink all but php 8.3
+  - name: Unlink all but php 8.4
     community.general.homebrew:
       name: "{{ item }}"
       state: unlinked
-    when: ansible_local['php_version'] != "8.3"
+    when: ansible_local['php_version'] != "8.4"
     loop:
-      - php@8.2
+      - php@8.3
       - php
-  - name: Link php 8.3 for CLI use
+  - name: Link php 8.4 for CLI use
     community.general.homebrew:
-      name: php@8.3
+      name: php@8.4
       state: linked
-    when: ansible_local['php_version'] != "8.3"
+    when: ansible_local['php_version'] != "8.4"
   - name: Symlink pcre2.h files for apcu installation
     ansible.builtin.file:
       src: /opt/homebrew/opt/pcre2/include/pcre2.h
@@ -67,12 +69,16 @@
       prompts:
         - (.*)Enable internal debugging in APCu \[no\]
     loop: "{{ pecl_exec_locations }}"
+    tags:
+      - install
   - name: Ensure pecl xdebug package is installed for all PHP versions
     community.general.pear:
       executable: "{{ item }}"
       name: pecl/xdebug
       state: latest
     loop: "{{ pecl_exec_locations }}"
+    tags:
+      - install
   - name: Remove php.ini changes from apcu pecl install
     ansible.builtin.lineinfile:
       path: /opt/homebrew/etc/php/{{ item }}/php.ini
@@ -85,17 +91,26 @@
       line: zend_extension="xdebug.so"
       state: absent
     loop: "{{ php_versions }}"
+  - name: Ensure PHP conf.d directories exist
+    ansible.builtin.file:
+      state: directory
+      # recurse: true
+      path: "/opt/homebrew/etc/php/{{ item }}"
+    loop:
+      - 8.3/conf.d
+      - 8.4/conf.d
+      - 8.5/conf.d
   - name: Add or update PHP extension ini files
     ansible.builtin.copy:
       src: files/{{ item.src }}
       dest: /opt/homebrew/etc/{{ item.dest }}
     loop:
-    - { src: ext-acpu.ini, dest: php/8.2/conf.d/ext-apcu.ini }
     - { src: ext-acpu.ini, dest: php/8.3/conf.d/ext-apcu.ini }
     - { src: ext-acpu.ini, dest: php/8.4/conf.d/ext-apcu.ini }
-    - { src: ext-xdebug.8.2.ini, dest: php/8.2/conf.d/ext-xdebug.ini }
+    - { src: ext-acpu.ini, dest: php/8.5/conf.d/ext-apcu.ini }
     - { src: ext-xdebug.8.3.ini, dest: php/8.3/conf.d/ext-xdebug.ini }
     - { src: ext-xdebug.8.4.ini, dest: php/8.4/conf.d/ext-xdebug.ini }
+    - { src: ext-xdebug.8.5.ini, dest: php/8.5/conf.d/ext-xdebug.ini }
 
   - name: Configure PHP memory_limit
     ansible.builtin.lineinfile:
@@ -139,12 +154,12 @@
     loop:
     - { src: Caddyfile.j2, dest: Caddyfile }
     - { src: example.test.conf.j2, dest: Caddy.conf.d/example.test.conf }
-    - { src: php-fpm_8.2_www-xdebug.conf.j2, dest: php/8.2/php-fpm.d/www-xdebug.conf }
-    - { src: php-fpm_8.2_www.conf.j2, dest: php/8.2/php-fpm.d/www.conf }
     - { src: php-fpm_8.3_www-xdebug.conf.j2, dest: php/8.3/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.3_www.conf.j2, dest: php/8.3/php-fpm.d/www.conf }
     - { src: php-fpm_8.4_www-xdebug.conf.j2, dest: php/8.4/php-fpm.d/www-xdebug.conf }
     - { src: php-fpm_8.4_www.conf.j2, dest: php/8.4/php-fpm.d/www.conf }
+    - { src: php-fpm_8.5_www-xdebug.conf.j2, dest: php/8.5/php-fpm.d/www-xdebug.conf }
+    - { src: php-fpm_8.5_www.conf.j2, dest: php/8.5/php-fpm.d/www.conf }
 
   - name: Ensure that the ~/sites/ directory exists
     ansible.builtin.file:

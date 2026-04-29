@@ -41,6 +41,12 @@ If you get an error about a missing `community.general` collection, run the foll
 $ ansible-galaxy install -r requirements.yml
 ```
 
+If you know that all of the software is up to date and you want to run the playbook without the homebrew and pecl install tasks, use:
+
+``
+$ ansible-playbook main.yml --skip-tags install
+```
+
 ## Starting the services
 
 This is left as a manual task at present, so that the configured software can be enabled or disabled as desired.
